@@ -1,0 +1,600 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Habit Tracker</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; transition: background-color 0.2s, color 0.2s; }
+    .dark body { background-color: #0f172a; color: #f1f5f9; }
+    .dark main { background-color: #1e293b; border-color: #334155; }
+    .dark .bg-slate-50 { background-color: #0f172a; border-color: #334155; }
+    .dark .bg-slate-100 { background-color: #334155; }
+    .dark .bg-slate-200 { background-color: #475569; }
+    .dark .text-slate-900 { color: #f8fafc; }
+    .dark .text-slate-800 { color: #f1f5f9; }
+    .dark .text-slate-700 { color: #e2e8f0; }
+    .dark .text-slate-600 { color: #cbd5e1; }
+    .dark .text-slate-500 { color: #94a3b8; }
+    .dark .text-slate-400 { color: #64748b; }
+    .dark .border-slate-200, .dark .border-slate-300 { border-color: #334155; }
+    .dark input, .dark select { background-color: #0f172a; color: #f8fafc; border-color: #334155; }
+    .dark .filter-btn.bg-white { background-color: #0f172a !important; color: #f8fafc !important; }
+    .dark #reset-day-btn { background-color: #334155; color: #e2e8f0; }
+    .dark #reset-day-btn:hover { background-color: #475569; }
+    .dark .backup-btn { background-color: #0f172a; border-color: #334155; color: #94a3b8; }
+    .dark .backup-btn:hover { color: #f8fafc; background-color: #1e293b; }
+    .quick-chip { transition: all 0.15s ease; }
+    .quick-chip:hover { transform: translateY(-1px); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center py-10 px-4">
+  <main class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 relative">
+    <!-- Header with Dark Mode Toggle -->
+    <header class="mb-6 relative text-center">
+      <div class="flex items-center justify-between mb-1">
+        <div class="w-8"></div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Daily Habit Tracker</h1>
+        <!-- Dark Mode Toggle Button -->
+        <button 
+          type="button" 
+          id="dark-mode-btn" 
+          title="Toggle Dark Mode"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-amber-400 bg-slate-100 dark:bg-slate-700 transition"
+        >
+          <span id="dark-mode-icon">🌙</span>
+        </button>
+      </div>
+      <p class="text-sm text-slate-500">Start small, stay consistent.</p>
+    </header>
+
+    <!-- Habit Input Form -->
+    <form id="habit-form" class="space-y-2.5 mb-5">
+      <div class="flex gap-2">
+        <input 
+          type="text" 
+          id="habit-input" 
+          placeholder="नई आदत लिखें या नीचे बटन दबाएं..." 
+          class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+          autocomplete="off"
+          required
+        />
+        <button 
+          type="submit" 
+          id="add-habit-btn"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition flex items-center justify-center shrink-0 shadow-sm"
+        >
+          Add Habit
+        </button>
+      </div>
+
+      <!-- Category Selector & Quick Suggestion Row -->
+      <div class="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+        <div class="flex items-center gap-1.5">
+          <label for="habit-category" class="text-xs font-medium text-slate-500">Category:</label>
+          <select 
+            id="habit-category" 
+            class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition cursor-pointer"
+          >
+            <option value="Health">🏃 Health</option>
+            <option value="Learning">📚 Learning</option>
+            <option value="Work">💼 Work</option>
+            <option value="Personal">✨ Personal</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick 1-Click Habit Chips -->
+      <div class="pt-1">
+        <p class="text-[11px] font-medium text-slate-400 mb-1.5 flex items-center gap-1">
+          <span>⚡ 1-क्लिक में जोड़ें:</span>
+        </p>
+        <div class="flex items-center gap-1.5 flex-wrap text-xs">
+          <button type="button" class="quick-chip px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800 font-medium hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800" onclick="quickAdd('💧 रोज 2-3 लीटर पानी पीना', 'Health')">
+            💧 पानी
+          </button>
+          <button type="button" class="quick-chip px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800 font-medium hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800" onclick="quickAdd('🏃 20 मिनट वॉक / एक्सरसाइज', 'Health')">
+            🏃 वॉक
+          </button>
+          <button type="button" class="quick-chip px-2.5 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-800 font-medium hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800" onclick="quickAdd('📚 15 मिनट किताब पढ़ना', 'Learning')">
+            📚 पढ़ना
+          </button>
+          <button type="button" class="quick-chip px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 font-medium hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" onclick="quickAdd('😴 समय पर 8 घंटे सोना', 'Personal')">
+            😴 नींद
+          </button>
+          <button type="button" class="quick-chip px-2.5 py-1 rounded-full border border-purple-200 bg-purple-50 text-purple-800 font-medium hover:bg-purple-100 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800" onclick="quickAdd('💼 3 ज़रूरी काम पूरे करना', 'Work')">
+            💼 3 काम
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Progress Card -->
+    <section class="bg-slate-50 rounded-xl p-3.5 mb-5 border border-slate-100">
+      <div class="flex items-center justify-between text-xs font-semibold text-slate-600 mb-1.5">
+        <span>Daily Progress</span>
+        <span id="progress-percent" class="text-emerald-700 dark:text-emerald-400 font-bold">0%</span>
+      </div>
+      <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+        <div id="progress-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+      </div>
+      <p id="progress-message" class="text-[11px] text-slate-400 mt-1.5 text-center">0 of 0 habits completed</p>
+    </section>
+
+    <!-- Action Toast Notification -->
+    <div id="toast" class="hidden mb-4 p-2.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-medium text-emerald-800 dark:text-emerald-300 text-center transition-all">
+      🌅 Checklists reset for a new day! Keep your streaks alive.
+    </div>
+
+    <!-- Filter Tabs & Reset Action -->
+    <div class="flex items-center justify-between gap-2 mb-4">
+      <nav class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-medium flex-1" aria-label="Habit Filters">
+        <button type="button" id="filter-all" class="filter-btn flex-1 py-1.5 rounded-md transition text-center bg-white text-slate-800 shadow-sm font-semibold">
+          All
+        </button>
+        <button type="button" id="filter-active" class="filter-btn flex-1 py-1.5 rounded-md transition text-center text-slate-500 hover:text-slate-800 font-medium">
+          Active
+        </button>
+        <button type="button" id="filter-completed" class="filter-btn flex-1 py-1.5 rounded-md transition text-center text-slate-500 hover:text-slate-800 font-medium">
+          Completed
+        </button>
+      </nav>
+
+      <!-- New Day Reset Button -->
+      <button 
+        type="button" 
+        id="reset-day-btn" 
+        title="Reset daily checks for tomorrow without losing your streaks"
+        class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium px-2.5 py-2 rounded-lg transition shrink-0 flex items-center gap-1"
+      >
+        <span>🌅</span>
+        <span class="hidden sm:inline">New Day</span>
+      </button>
+    </div>
+
+    <!-- Section Header & Stats Bar -->
+    <div class="flex items-center justify-between text-xs font-medium text-slate-500 mb-3 px-1">
+      <span>Habits List</span>
+      <span id="habit-stats">0 completed</span>
+    </div>
+
+    <!-- Habit List -->
+    <ul id="habit-list" class="space-y-2.5">
+      <!-- Empty state placeholder -->
+      <li id="empty-state" class="py-8 text-center text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+        No habits yet. Add your first habit above!
+      </li>
+    </ul>
+
+    <!-- Data Backup & Restore Footer -->
+    <footer class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
+      <span>Data Backup:</span>
+      <div class="flex items-center gap-2">
+        <button 
+          type="button" 
+          id="export-btn"
+          class="backup-btn px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium transition"
+        >
+          ⬇️ Export
+        </button>
+        <button 
+          type="button" 
+          id="import-btn"
+          class="backup-btn px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium transition"
+        >
+          ⬆️ Import
+        </button>
+        <input type="file" id="import-file" accept=".json" class="hidden" />
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // 1. Grab HTML elements
+    const habitForm = document.getElementById('habit-form');
+    const habitInput = document.getElementById('habit-input');
+    const habitCategory = document.getElementById('habit-category');
+    const habitList = document.getElementById('habit-list');
+    const emptyState = document.getElementById('empty-state');
+    const habitStats = document.getElementById('habit-stats');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressMessage = document.getElementById('progress-message');
+    const resetDayBtn = document.getElementById('reset-day-btn');
+    const toast = document.getElementById('toast');
+    const darkModeBtn = document.getElementById('dark-mode-btn');
+    const darkModeIcon = document.getElementById('dark-mode-icon');
+    const exportBtn = document.getElementById('export-btn');
+    const importBtn = document.getElementById('import-btn');
+    const importFile = document.getElementById('import-file');
+
+    const filterAllBtn = document.getElementById('filter-all');
+    const filterActiveBtn = document.getElementById('filter-active');
+    const filterCompletedBtn = document.getElementById('filter-completed');
+
+    const STORAGE_KEY = 'daily_habits_v3'; // Bumping key to load all 10 habits
+    const THEME_KEY = 'habit_tracker_theme';
+
+    // 10 Ready-made popular habits
+    const DEFAULT_HABITS = [
+      { id: 101, text: '💧 रोज 2-3 लीटर पानी पीना', category: 'Health', completed: false, streak: 1 },
+      { id: 102, text: '🏃 सुबह 20 मिनट वॉक या हल्का व्यायाम', category: 'Health', completed: false, streak: 2 },
+      { id: 103, text: '🍎 फल या हरी सब्जियाँ खाना', category: 'Health', completed: false, streak: 1 },
+      { id: 104, text: '🚶‍♂️ खाना खाने के बाद 100 कदम टहलना', category: 'Health', completed: false, streak: 1 },
+      { id: 105, text: '📚 15 मिनट किताब पढ़ना या नई स्किल सीखना', category: 'Learning', completed: false, streak: 1 },
+      { id: 106, text: '💼 दिन के 3 सबसे ज़रूरी काम निपटाना', category: 'Work', completed: false, streak: 3 },
+      { id: 107, text: '✍️ कल के कामों की छोटी लिस्ट बनाना', category: 'Work', completed: false, streak: 1 },
+      { id: 108, text: '🧘 5-10 मिनट शांत बैठकर ध्यान (Meditation)', category: 'Personal', completed: false, streak: 1 },
+      { id: 109, text: '📵 सोने से 30 मिनट पहले मोबाइल छोड़ना', category: 'Personal', completed: false, streak: 1 },
+      { id: 110, text: '😴 रात में समय पर 7-8 घंटे सुकून की नींद', category: 'Personal', completed: false, streak: 1 }
+    ];
+
+    // Category styling definitions
+    const CATEGORIES = {
+      Health: { label: '🏃 Health', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800' },
+      Learning: { label: '📚 Learning', badgeClass: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800' },
+      Work: { label: '💼 Work', badgeClass: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800' },
+      Personal: { label: '✨ Personal', badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800' }
+    };
+
+    // 2. State management
+    let habits = loadHabits();
+    let currentFilter = 'all'; // 'all', 'active', or 'completed'
+    let hasCelebrated = false; // Prevents confetti spam
+    let toastTimeout = null;
+
+    // Toast helper
+    function showNotification(msg) {
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+
+    // Quick add habit without typing
+    window.quickAdd = function(text, category) {
+      const exists = habits.some(h => h.text === text);
+      if (exists) {
+        showNotification('ℹ️ यह आदत पहले से आपकी लिस्ट में जुड़ी हुई है!');
+        return;
+      }
+      const newHabit = {
+        id: Date.now(),
+        text: text,
+        category: category,
+        completed: false,
+        streak: 0
+      };
+      habits.push(newHabit);
+      hasCelebrated = false;
+      saveHabits();
+      renderHabits();
+      showNotification(`✅ "${text}" जोड़ दी गई है!`);
+    };
+
+    // Theme initialization
+    function initTheme() {
+      try {
+        const savedTheme = localStorage.getItem(THEME_KEY);
+        if (savedTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+          darkModeIcon.textContent = '☀️';
+        } else {
+          document.documentElement.classList.remove('dark');
+          darkModeIcon.textContent = '🌙';
+        }
+      } catch (err) {
+        console.warn('LocalStorage unavailable for theme:', err);
+      }
+    }
+
+    darkModeBtn.addEventListener('click', function() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      darkModeIcon.textContent = isDark ? '☀️' : '🌙';
+      try {
+        localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+      } catch (err) {
+        console.warn('LocalStorage unavailable:', err);
+      }
+    });
+
+    initTheme();
+
+    function saveHabits() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+      } catch (err) {
+        console.warn('LocalStorage unavailable:', err);
+      }
+    }
+
+    function loadHabits() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+        return DEFAULT_HABITS;
+      } catch (err) {
+        console.warn('LocalStorage unavailable:', err);
+        return DEFAULT_HABITS;
+      }
+    }
+
+    // 3. Form submit: add habit with category
+    habitForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const habitText = habitInput.value.trim();
+      const category = habitCategory.value || 'Personal';
+      if (!habitText) return;
+
+      const newHabit = {
+        id: Date.now(),
+        text: habitText,
+        category: category,
+        completed: false,
+        streak: 0
+      };
+
+      habits.push(newHabit);
+      hasCelebrated = false;
+      saveHabits();
+      habitInput.value = '';
+      renderHabits();
+    });
+
+    // 4. Toggle completion status
+    function toggleHabit(id) {
+      const habit = habits.find(h => h.id === id);
+      if (habit) {
+        habit.completed = !habit.completed;
+        if (habit.completed) {
+          habit.streak = (habit.streak || 0) + 1;
+        } else {
+          habit.streak = Math.max(0, (habit.streak || 1) - 1);
+          hasCelebrated = false;
+        }
+        saveHabits();
+        renderHabits();
+      }
+    }
+
+    // 5. Delete habit
+    function deleteHabit(id) {
+      habits = habits.filter(h => h.id !== id);
+      hasCelebrated = false;
+      saveHabits();
+      renderHabits();
+    }
+
+    // 6. Reset for a new day
+    resetDayBtn.addEventListener('click', function() {
+      if (habits.length === 0) return;
+
+      habits.forEach(h => {
+        h.completed = false;
+      });
+      hasCelebrated = false;
+
+      saveHabits();
+      renderHabits();
+      showNotification('🌅 Checklists reset for a new day! Keep your streaks alive.');
+    });
+
+    // 7. Filter button click handlers
+    function setFilter(filter) {
+      currentFilter = filter;
+
+      const buttons = [
+        { btn: filterAllBtn, key: 'all' },
+        { btn: filterActiveBtn, key: 'active' },
+        { btn: filterCompletedBtn, key: 'completed' }
+      ];
+
+      buttons.forEach(item => {
+        if (item.key === filter) {
+          item.btn.className = 'filter-btn flex-1 py-1.5 rounded-md transition text-center bg-white text-slate-800 shadow-sm font-semibold';
+        } else {
+          item.btn.className = 'filter-btn flex-1 py-1.5 rounded-md transition text-center text-slate-500 hover:text-slate-800 font-medium';
+        }
+      });
+
+      renderHabits();
+    }
+
+    filterAllBtn.addEventListener('click', () => setFilter('all'));
+    filterActiveBtn.addEventListener('click', () => setFilter('active'));
+    filterCompletedBtn.addEventListener('click', () => setFilter('completed'));
+
+    // 8. Export and Import JSON data
+    exportBtn.addEventListener('click', function() {
+      if (habits.length === 0) {
+        showNotification('ℹ️ No habits to export yet.');
+        return;
+      }
+      try {
+        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(habits, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute('href', dataStr);
+        downloadAnchor.setAttribute('download', `habits_backup_${new Date().toISOString().slice(0, 10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        showNotification('💾 Habit data exported successfully!');
+      } catch (err) {
+        console.warn('Export failed:', err);
+        showNotification('⚠️ Could not export data.');
+      }
+    });
+
+    importBtn.addEventListener('click', function() {
+      importFile.click();
+    });
+
+    importFile.addEventListener('change', function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (Array.isArray(parsed)) {
+            habits = parsed;
+            saveHabits();
+            renderHabits();
+            showNotification(`✅ Successfully imported ${parsed.length} habit(s)!`);
+          } else {
+            showNotification('⚠️ Invalid file: Expected an array of habits.');
+          }
+        } catch (err) {
+          console.warn('Import parse error:', err);
+          showNotification('⚠️ Could not parse the JSON file.');
+        }
+      };
+      reader.readAsText(file);
+      importFile.value = '';
+    });
+
+    // 9. Update progress display & trigger celebration
+    function updateProgress() {
+      const total = habits.length;
+      const completed = habits.filter(h => h.completed).length;
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      progressBar.style.width = `${percent}%`;
+      progressPercent.textContent = `${percent}%`;
+      habitStats.textContent = `${completed} of ${total} completed`;
+
+      if (total === 0) {
+        progressMessage.textContent = '0 of 0 habits completed';
+      } else if (percent === 100) {
+        progressMessage.textContent = `🎉 All ${total} habits completed! Excellent work!`;
+        if (!hasCelebrated && typeof confetti === 'function') {
+          hasCelebrated = true;
+          try {
+            confetti({
+              particleCount: 75,
+              spread: 60,
+              origin: { y: 0.6 }
+            });
+          } catch (e) {
+            console.log('Confetti effect skipped', e);
+          }
+        }
+      } else {
+        progressMessage.textContent = `${completed} of ${total} habits completed`;
+      }
+    }
+
+    // 10. Draw habits on screen
+    function renderHabits() {
+      updateProgress();
+      habitList.innerHTML = '';
+
+      // Filter habits based on current selection
+      const filtered = habits.filter(habit => {
+        if (currentFilter === 'active') return !habit.completed;
+        if (currentFilter === 'completed') return habit.completed;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        let msg = 'No habits yet. Add your first habit above!';
+        if (habits.length > 0) {
+          if (currentFilter === 'active') msg = '✨ All habits completed for today!';
+          if (currentFilter === 'completed') msg = 'No completed habits yet today. Keep going!';
+        }
+        emptyState.textContent = msg;
+        emptyState.style.display = 'block';
+        habitList.appendChild(emptyState);
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      filtered.forEach(habit => {
+        const li = document.createElement('li');
+        li.className = `flex items-center justify-between p-3.5 rounded-xl border transition ${
+          habit.completed 
+            ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-slate-400' 
+            : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm'
+        }`;
+
+        // Left side: checkbox + text + category badge + streak badge
+        const leftDiv = document.createElement('div');
+        leftDiv.className = 'flex items-center gap-3 flex-1 min-w-0 mr-2 cursor-pointer';
+        leftDiv.addEventListener('click', () => toggleHabit(habit.id));
+
+        const checkbox = document.createElement('button');
+        checkbox.type = 'button';
+        checkbox.className = `w-5 h-5 rounded-md flex items-center justify-center border transition shrink-0 ${
+          habit.completed 
+            ? 'bg-emerald-600 border-emerald-600 text-white' 
+            : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500 bg-white dark:bg-slate-800'
+        }`;
+        checkbox.innerHTML = habit.completed 
+          ? '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>'
+          : '';
+
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'flex flex-col min-w-0';
+
+        // Title and streak line
+        const titleRow = document.createElement('div');
+        titleRow.className = 'flex items-center gap-2 min-w-0';
+
+        const span = document.createElement('span');
+        span.className = `text-sm font-medium truncate ${habit.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'}`;
+        span.textContent = habit.text;
+
+        const streakBadge = document.createElement('span');
+        streakBadge.className = 'inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800 shrink-0';
+        streakBadge.innerHTML = `🔥 ${habit.streak || 0}d`;
+
+        titleRow.appendChild(span);
+        titleRow.appendChild(streakBadge);
+
+        // Category Tag
+        const catConfig = CATEGORIES[habit.category] || CATEGORIES.Personal;
+        const catBadge = document.createElement('span');
+        catBadge.className = `inline-block text-[10px] font-medium px-1.5 py-0.5 rounded border w-fit mt-0.5 ${catConfig.badgeClass}`;
+        catBadge.textContent = catConfig.label;
+
+        contentContainer.appendChild(titleRow);
+        contentContainer.appendChild(catBadge);
+
+        leftDiv.appendChild(checkbox);
+        leftDiv.appendChild(contentContainer);
+
+        // Right side: delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'text-slate-400 hover:text-red-500 p-1 rounded-md transition shrink-0';
+        deleteBtn.title = 'Delete habit';
+        deleteBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteHabit(habit.id);
+        });
+
+        li.appendChild(leftDiv);
+        li.appendChild(deleteBtn);
+        habitList.appendChild(li);
+      });
+    }
+
+    // Initial render on page load
+    renderHabits();
+  </script>
+</body>
+</html>
+```
